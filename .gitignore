@@ -1,0 +1,7 @@
+# yml是参数配置文件，需要自行定义
+# checkpoints是模型的参数存储，用于选取最优模型, .pth是其中的参数文件
+
+**/__pycache__
+checkpoints/
+.yml
+.pth
