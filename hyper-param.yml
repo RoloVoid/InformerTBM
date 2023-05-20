@@ -19,7 +19,7 @@ d_model: 4
 n_heads: 4
 e_layers: 2
 d_layers: 1
-d_ff: 512
+d_ff: 256
 factor: 5 # probsparse attn factor
 distil: False
 dropout: 0.05
@@ -36,17 +36,18 @@ target: ''
 
 train_epochs: 400
 batch_size: 32
-patience: 3 # 用于早停的参数
-learning_rate: 0.00001 # 优化器的学习率
+use_early_stopping: True
+patience: 50 # 用于早停的参数
+lradj: 'type2' # 学习率参数，可选固定学习率和自适应学习率
+learning_rate: 0.001 # 初始化优化器的学习率, 会受动态学习率工具制约
 loss: 'mse' # 损失函数
 
 # 训练时的其它参数
 use_gpu: True
 gpu: 0
 num_workers: 1
-lradj: 'type3' # 学习率参数，可选固定学习率和自适应学习率
+shuffle: True # 是否要打乱刀号选取
 
-# 暂时搞不清的参数
 checkpoints: ''
 use_amp: ''
 scale: ''

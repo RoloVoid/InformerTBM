@@ -2,7 +2,7 @@ from data.data_loader import TBMDataset,TBMDataset_Pred
 from models.model import InformerTBM
 
 from utils.tools import EarlyStopping, adjust_learning_rate
-from utils.metrics import metric
+from utils.metrics import metric, R2
 
 import torch
 import numpy as np
@@ -17,7 +17,7 @@ class Procedure():
     def __init__(self,args):
         self.args = args
         self.device = self._training_device()
-        self.model = self._build_model()
+        self.model = self._build_model().to(self.device)
     
     def _training_device(self):
         if self.args['use_gpu']:
@@ -53,6 +53,8 @@ class Procedure():
             distil=self.args['distil'],
             mix=self.args['mix']
         ).float()
+
+
         return model
 
     def _get_data(self, flag):
@@ -72,6 +74,7 @@ class Procedure():
             batch_size = self.args['batch_size']
 
         dataset = Data(
+            shuffle = self.args['shuffle'],
             root_path = self.args['root_path'],
             data_path=self.args['data_path'],
             flag=flag,
@@ -128,7 +131,10 @@ class Procedure():
 
         time_now = time.time()
         train_steps = len(train_loader)
-        early_stopping = EarlyStopping(patience=self.args['patience'],verbose=True)
+
+        early_stopping = None
+        if self.args['use_early_stopping']:
+            early_stopping = EarlyStopping(patience=self.args['patience'],verbose=True)
 
         model_optim = self._select_optimizer()
         criterion = self._select_criterion()
@@ -178,10 +184,11 @@ class Procedure():
             print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Test Loss: {4:.7f}".format(
                     epoch + 1, train_steps, train_loss, vali_loss, test_loss))
             # 早停
-            early_stopping(vali_loss,self.model,path)
-            if early_stopping.early_stop:
-                print("Early stopping")
-                break
+            if early_stopping:
+                early_stopping(vali_loss,self.model,path)
+                if early_stopping.early_stop:
+                    print("Early stopping")
+                    break
 
             # 学习率动态调节
             adjust_learning_rate(model_optim, epoch+1, self.args)
@@ -260,16 +267,15 @@ class Procedure():
         
     def _process_one_batch(self,dataset_object, batch_x, batch_y):
         batch_x = batch_x.float().to(self.device)
-        batch_y = batch_y.float().to(self.device)
+        batch_y = batch_y.float()
 
         # 解码器 输入
         if self.args['padding']==0:
             dec_input = torch.zeros([batch_y.shape[0], self.args['pred_len'], batch_y.shape[-1]]).float()
         elif self.args['padding']==1:
             dec_input = torch.ones([batch_y.shape[0], self.args['pred_len'], batch_y.shape[-1]]).float()
-
         dec_input = torch.cat([batch_y[:,:self.args['label_len'],:],dec_input],dim=1).float().to(self.device)
-
+        
         if self.args['output_attn']:
             outputs = self.model(batch_x, dec_input)[0]
         else:

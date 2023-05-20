@@ -38,7 +38,8 @@ class FullAttn(nn.Module):
 
 # informer的原实现，即稀疏注意力
 class ProbAttn(nn.Module):
-    def __init__(self, mask_flag=True, factor=5, 
+    def __init__(self, 
+                 mask_flag=True, factor=5, 
                  scale=None, attn_dropout=0.1,output_attn=False):
         super(ProbAttn, self).__init__()
         self.factor = factor

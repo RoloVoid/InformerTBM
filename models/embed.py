@@ -49,6 +49,7 @@ class TokenEmbedding(nn.Module):
 
     def forward(self, x):
         # x: [N, seq_len, c_in]
+        x = x
         x = self.tokenConv(x.permute(0,2,1)).transpose(1,2)
         return x
 
@@ -71,6 +72,7 @@ class FixedEmbedding(nn.Module):
         self.emb.weight = nn.Parameter(w,requires_grad=False)
 
     def forward(self,x):
+        x = x
         return self.emb(x).detach()
 
 # 盾构机掘进以min为单位，temporal attention简化为单min
@@ -86,6 +88,7 @@ class TemporalEmbedding(nn.Module):
 
     def forward(self,x):
         x = x.long()
+        x = x
 
         min1_x = self.min1_embed(x[:,:,1])
         min2_x = self.min2_embed(x[:,:,0])
@@ -94,16 +97,16 @@ class TemporalEmbedding(nn.Module):
 
 # 将所有的数据Embedding
 class DataEmbedding(nn.Module):
-    def __init__(self,c_in,d_model,embed_type='fixed',dropout=0.1):
+    def __init__(self,c_in,d_model, embed_type='fixed',dropout=0.1):
         
         super(DataEmbedding, self).__init__()
         self.value_embedding = TokenEmbedding(c_in=c_in,d_model=d_model)
         self.pos_embedding = PositionalEmbedding(d_model=d_model)
         self.temporal_embedding = TemporalEmbedding(d_model=d_model, embed_type=embed_type)
-
         self.dropout = nn.Dropout(p=dropout)
 
     def forward(self,x):
         x = self.value_embedding(x)+self.pos_embedding(x)
+        x = x
 
         return self.dropout(x)

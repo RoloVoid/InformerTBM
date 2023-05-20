@@ -38,7 +38,7 @@ class InformerTBM(nn.Module):
                               n_heads,d_model,mix=False),
                     d_model,d_ff, # d_ff是encoder层的中间层数
                     dropout=dropout,
-                    activation=activation
+                    activation=activation,
                 ) for i in range(e_layers)
             ], # 编码层
             [

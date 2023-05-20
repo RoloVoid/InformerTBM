@@ -1,4 +1,5 @@
 import yaml
+import torch
 from proc.procedure import Procedure
 
 
@@ -12,3 +13,5 @@ p = Procedure
 test = p(params)
 # 先简化，setting只是为了处理文件名
 test.train(setting="")
+
+torch.cuda.empty_cache()

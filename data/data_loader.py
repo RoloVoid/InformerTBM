@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 
 import torch
+import random
 from utils.tools import StandardScaler
 from torch.utils.data import Dataset, DataLoader
 
@@ -11,7 +12,8 @@ type_map = {'train':1,'val':2,'test':0}
 # 此处的盾构机数据处理任务默认是一个MS(Mutivariate predict univariate，即多变量预测单变量)任务
 # informer的原设计中对上述的不同情况进行了区分，此处的简化不再区分
 class TBMDataset(Dataset):
-    def __init__(self,root_path='../data/shieldmachine/knife',flag='train',size=None,
+    def __init__(self,shuffle=False,
+                 root_path='../data/shieldmachine/knife',flag='train',size=None,
                  split='刀号',data_path='temp1.xlsx',
                  target='修正磨损量',scale=False,cols=None):
         
