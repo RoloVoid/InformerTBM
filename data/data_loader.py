@@ -15,7 +15,7 @@ class TBMDataset(Dataset):
     def __init__(self,shuffle=False,
                  root_path='../data/shieldmachine/knife',flag='train',size=None,
                  split='刀号',data_path='temp1.xlsx',
-                 target='修正磨损量',scale=False,cols=None):
+                 target='单位时间磨损量',scale=False,cols=None):
         
         # 依据informer架构的设计:
         # size[seq_len, label_len, pred_len]
@@ -81,7 +81,6 @@ class TBMDataset(Dataset):
         s_end = s_begin + self.seq_len
         r_begin = s_end - self.label_len
         r_end = r_begin + self.label_len + self.pred_len
-
         seq_x = self.data_x[s_begin:s_end]
         seq_y = self.data_y[r_begin:r_end]
 

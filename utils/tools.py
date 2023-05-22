@@ -13,7 +13,7 @@ def adjust_learning_rate(optimizer, epoch, args):
 
         # 针对盾构机数据进行优化的部分
         lr_adjust = {
-            100: 1e-4, 200: 5e-5, 300: 1e-5
+            50: 1e-4, 100: 5e-5, 150: 1e-5, 200: 5e-6, 250: 1e-6 
         }
     else:
         return # 保留初始学习率

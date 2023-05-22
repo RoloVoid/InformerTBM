@@ -1,7 +1,7 @@
 # 这个文件用于数据读取和模型参数的约束
 
 # 文件路径和数据
-root_path: '/home/rolo/desktop/python/data/shieldmachine/knife'
+root_path: '/home/rolovoid/Desktop/python/data/shieldmachine/knife'
 data_path: 'temp1.xlsx'
 check_points: './checkpoints'
 
@@ -9,17 +9,17 @@ check_points: './checkpoints'
 seq_len: 8
 label_len: 2
 pred_len: 2
-padding: 1
+padding: 0
 
 # 模型参数
-enc_in: 16
-dec_in: 16
-c_out: 16
+enc_in: 16 # 输入数据有几个参数就用几个参数
+dec_in: 16 # 输入数据有几个参数就用几个参数
+c_out: 16 # 输入数据有几个参数就用几个参数
 d_model: 4
 n_heads: 4
-e_layers: 2
-d_layers: 1
-d_ff: 256
+e_layers: 3
+d_layers: 2
+d_ff: 64
 factor: 5 # probsparse attn factor
 distil: False
 dropout: 0.05
@@ -38,14 +38,14 @@ train_epochs: 400
 batch_size: 32
 use_early_stopping: True
 patience: 50 # 用于早停的参数
-lradj: 'type2' # 学习率参数，可选固定学习率和自适应学习率
-learning_rate: 0.001 # 初始化优化器的学习率, 会受动态学习率工具制约
+lradj: 'type3' # 学习率参数，可选固定学习率和自适应学习率
+learning_rate: 0.01 # 初始化优化器的学习率, 会受动态学习率工具制约
 loss: 'mse' # 损失函数
 
 # 训练时的其它参数
 use_gpu: True
 gpu: 0
-num_workers: 1
+num_workers: 5
 shuffle: True # 是否要打乱刀号选取
 
 checkpoints: ''

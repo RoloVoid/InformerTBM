@@ -49,7 +49,9 @@ class TokenEmbedding(nn.Module):
 
     def forward(self, x):
         # x: [N, seq_len, c_in]
-        x = x
+        # test
+        # print(x.shape)
+        # exit()
         x = self.tokenConv(x.permute(0,2,1)).transpose(1,2)
         return x
 

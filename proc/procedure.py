@@ -150,7 +150,6 @@ class Procedure():
             for i, (batch_x,batch_y) in enumerate(train_loader):
                 iter_count += 1
                 model_optim.zero_grad()
-                # tag
                 pred,real = self._process_one_batch(
                     train_data,batch_x,batch_y
                 )
