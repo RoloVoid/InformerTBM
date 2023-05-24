@@ -5,3 +5,4 @@
 checkpoints/
 .yml
 .pth
+.pytest_cache

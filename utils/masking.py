@@ -6,7 +6,7 @@ class TriangularCasualMask():
         with torch.no_grad():
             # diagonal=1 消掉了上三角矩阵的对角线
             self._mask=torch.triu(torch.ones(mask_shape, dtype=torch.bool), 
-                                  diagonal=1)
+                                  diagonal=1).to(device)
 
     @property
     def mask(self):

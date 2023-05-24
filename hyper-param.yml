@@ -15,20 +15,20 @@ padding: 0
 enc_in: 16 # 输入数据有几个参数就用几个参数
 dec_in: 16 # 输入数据有几个参数就用几个参数
 c_out: 16 # 输入数据有几个参数就用几个参数
-d_model: 4
+d_model: 4 # 受输入数据制约
 n_heads: 4
 e_layers: 3
-d_layers: 2
-d_ff: 64
-factor: 5 # probsparse attn factor
-distil: False
-dropout: 0.05
+d_layers: 1
+d_ff: 32
+factor: 5 # probsparse attn factor, 选择稀疏注意力的阈值, 即
+distil: True # 蒸馏操作, 对模型的优化, 在本实验中意义不大
+dropout: 0.01
 attn: 'prob'
 activation: 'gelu'
 output_attn: True
 do_predict: True
-embed: ''
-mix: False
+embed: '' # 使用默认embedding
+mix: True # 运算时对array在内存中的物理存储改变以提高训练效率,盾构机数据量较小,无需使用
 
 # 选取特征
 cols: ''
@@ -38,16 +38,15 @@ train_epochs: 400
 batch_size: 32
 use_early_stopping: True
 patience: 50 # 用于早停的参数
-lradj: 'type3' # 学习率参数，可选固定学习率和自适应学习率
+lradj: 'type3' # 学习率参数，可选固定学习率(type3)/自适应学习率(type2)/动态学习率(type1)
 learning_rate: 0.01 # 初始化优化器的学习率, 会受动态学习率工具制约
 loss: 'mse' # 损失函数
 
 # 训练时的其它参数
 use_gpu: True
 gpu: 0
-num_workers: 5
+num_workers: 5 # DataLoader的参数
 shuffle: True # 是否要打乱刀号选取
-
-checkpoints: ''
-use_amp: ''
-scale: ''
+checkpoints: '' # 模型参数存储位置
+use_amp: '' # cuda的多元精度优化,暂时用不到
+scale: '' # attention系数,采取默认设置计算

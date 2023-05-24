@@ -28,7 +28,7 @@ class Procedure():
             print('Use CPU')
         return device
     
-    # 只使用单informer，不堆叠
+    # 只使用单informer，不堆叠; 使用Baseline中的模型进行初始化
     def _build_model(self):
         model = InformerTBM(
             enc_in=self.args['enc_in'],

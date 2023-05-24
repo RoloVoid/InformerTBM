@@ -36,6 +36,7 @@ class TBMDataset(Dataset):
         self.scale = scale
         self.scaler = StandardScaler() # 使用实现的标准化方法
         self.split = split # 数据集的划分依据，这里用刀号
+        self.shuffle = shuffle
 
         self.root_path = root_path
         self.data_path = data_path
@@ -50,6 +51,8 @@ class TBMDataset(Dataset):
 
         # 根据刀号划分
         self.separ=df_raw[self.split].unique()
+        if self.shuffle:
+            random.shuffle(self.separ)
 
         # 1/2训练，1/4测试，1/4验证
         l = len(self.separ)

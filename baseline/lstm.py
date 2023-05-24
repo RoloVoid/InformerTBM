@@ -5,13 +5,16 @@ from torch import nn
 import numpy as np
 
 class LSTM(nn.Module):
-    def __init__(self, input_size=1, hidden_layer=100,output_size=1):
+    def __init__(self, input_size, h_size, num_layers, pred_len):
         super().__init__()
-        self.hidden_layer_size = hidden_layer
+        self.hidden_layer_size = h_size
+        self.n_layers = num_layers
+        self.pred_len = pred_len
+        self.linear = nn.Linear(h_size,input_size)
 
-        self.lstm = nn.LSTM(input_size, hidden_layer)
+        self.lstm = nn.LSTM(input_size, h_size, num_layers,batch_first=True)
 
-    def forward(self,input_seq):
-        lstm_out, self.hidden_cell = self.lstm(input_seq)
+    def forward(self,input_seq,init_base):
+        lstm_out, self.hidden_cell = self.lstm(input_seq,init_base)
         predicts = self.linear(lstm_out)
-        return predicts[-1]
+        return predicts[-1] # 返回结果的最后一项是标签

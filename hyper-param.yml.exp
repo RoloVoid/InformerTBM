@@ -1,53 +1,54 @@
 # 这个文件用于数据读取和模型参数的约束
-# 训练前请根据修改文件路径并去掉后缀的.exp
 
 # 文件路径和数据
 root_path: 'path/to/your/file'
-data_path: 'filename'
-check_points: './checkpoints'
+data_path: 'filename.xlsx'
+check_points: 'path/to/your/checkpoints'
 
 # 预测和读取的参数
 seq_len: 8
 label_len: 2
 pred_len: 2
-padding: 1
+padding: 0
 
 # 模型参数
-enc_in: 16
-dec_in: 16
-c_out: 16
-d_model: 4
-n_heads: 4
-e_layers: 2
+enc_in: 16 # 输入数据有几个参数就用几个参数
+dec_in: 16 # 输入数据有几个参数就用几个参数
+c_out: 16 # 输入数据有几个参数就用几个参数
+d_model: 4 # 受输入数据制约
+n_heads: 4 # 注意力头数
+e_layers: 3
 d_layers: 1
-d_ff: 512
-factor: 5 # probsparse attn factor
-distil: False
-dropout: 0.05
+d_ff: 32
+factor: 5 # probsparse attn factor, 选择稀疏注意力的阈值, 即
+distil: False # 蒸馏操作, 对模型的优化, 盾构机数据比较少,优化不显著
+dropout: 0.01
 attn: 'prob'
 activation: 'gelu'
 output_attn: True
 do_predict: True
-embed: ''
-mix: False
+embed: '' # 使用默认embedding
+mix: True # 运算时对array在内存中的物理存储改变以提高训练效率,盾构机数据量较小,不影响效率
 
-# 选取特征
-cols: ''
-target: ''
+# 选取特征,在此均设置为默认
+cols: '' # 参数选择
+target: '' # 标签设置
 
-train_epochs: 100
-batch_size: 32
-patience: 3 # 用于早停的参数
-learning_rate: 0.00001 # 优化器的学习率
+# 训练设置和batch_size
+train_epochs: 400
+batch_size: 16
+
+use_early_stopping: True
+patience: 50 # 用于早停的参数
+lradj: 'type3' # 学习率参数，可选固定学习率(type3)/分段学习率(type2)/动态学习率(type1)
+learning_rate: 0.01 # 初始化优化器的学习率, 会受动态学习率工具制约
 loss: 'mse' # 损失函数
 
 # 训练时的其它参数
-use_gpu: False
+use_gpu: True
 gpu: 0
-num_workers: 1
-lradj: 'type3' # 学习率参数，可选固定学习率和自适应学习率
-checkpoints: ''
-
-# 原代码上继承来还没有进行适配的参数
-use_amp: ''
-scale: ''
+num_workers: 5 # DataLoader的参数
+shuffle: True # 是否要打乱刀号选取
+checkpoints: '' # 模型参数存储位置, 使用默认值
+use_amp: '' # cuda的多元精度优化,暂时用不到
+scale: '' # attention系数,采取默认设置计算
