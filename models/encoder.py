@@ -23,7 +23,7 @@ class ConvLayer(nn.Module):
         x = self.norm(x)
         x = self.activation(x)
         x = self.maxPool(x)
-        x = x.transpose(x)
+        x = x.transpose(1,2)
         return x
     
 class EncoderLayer(nn.Module):

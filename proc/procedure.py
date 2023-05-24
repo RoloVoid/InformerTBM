@@ -2,7 +2,7 @@ from data.data_loader import TBMDataset,TBMDataset_Pred
 from models.model import InformerTBM
 
 from utils.tools import EarlyStopping, adjust_learning_rate
-from utils.metrics import metric, R2
+from utils.metrics import metric
 
 import torch
 import numpy as np
@@ -28,7 +28,7 @@ class Procedure():
             print('Use CPU')
         return device
     
-    # 只使用单informer，不堆叠; 使用Baseline中的模型进行初始化
+    # 只使用单Informer层，不堆叠
     def _build_model(self):
         model = InformerTBM(
             enc_in=self.args['enc_in'],
@@ -54,13 +54,12 @@ class Procedure():
             mix=self.args['mix']
         ).float()
 
-
         return model
 
     def _get_data(self, flag):
         Data = TBMDataset
         if flag == 'test': 
-            shuffle_flag = False
+            shuffle_flag = False # 已经被刀号分割了，可以丢弃
             drop_last = True
             batch_size = self.args['batch_size']
         elif flag=='pred':
@@ -165,7 +164,7 @@ class Procedure():
                     iter_count = 0
                     time_now = time.time()
                 
-                # use_amp? scaler?
+                # 此处见hyper-param部分
                 if self.args['use_amp']:
                     scaler.scale(loss).backward()
                     scaler.step(model_optim)
@@ -267,14 +266,14 @@ class Procedure():
     def _process_one_batch(self,dataset_object, batch_x, batch_y):
         batch_x = batch_x.float().to(self.device)
         batch_y = batch_y.float()
-
+        
         # 解码器 输入
         if self.args['padding']==0:
             dec_input = torch.zeros([batch_y.shape[0], self.args['pred_len'], batch_y.shape[-1]]).float()
         elif self.args['padding']==1:
             dec_input = torch.ones([batch_y.shape[0], self.args['pred_len'], batch_y.shape[-1]]).float()
         dec_input = torch.cat([batch_y[:,:self.args['label_len'],:],dec_input],dim=1).float().to(self.device)
-        
+
         if self.args['output_attn']:
             outputs = self.model(batch_x, dec_input)[0]
         else:
@@ -282,7 +281,7 @@ class Procedure():
 
         batch_y = batch_y[:,-self.args['pred_len']:,0:].to(self.device)
 
-        return outputs, batch_y
+        return outputs[:,:,-1], batch_y[:,:,-1]
 
 
 
