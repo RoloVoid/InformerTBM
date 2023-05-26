@@ -37,7 +37,7 @@ class Procedure():
             seq_len=self.args['seq_len'],
             label_len=self.args['label_len'],
             out_len=self.args['pred_len'],
-            factor=self.args['factor'], # 决定预测的任务类型
+            factor=self.args['factor'],
             d_model=self.args['d_model'],
             n_heads=self.args['n_heads'],
             e_layers=self.args['e_layers'],
