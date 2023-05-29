@@ -55,7 +55,7 @@ class BaseLSTM():
             drop_last = True
 
         dataset = Data (
-            shuffle = self.args['shuffle'],
+            # shuffle = self.args['shuffle'],
             root_path = self.args['root_path'],
             data_path = self.args['data_path'],
             flag=flag,
@@ -83,7 +83,7 @@ class BaseLSTM():
         criterion = nn.MSELoss()
         return criterion
 
-    def train(self,setting):
+    def train(self,setting,load=False):
         train_data, train_loader = self._get_data(flag='train')
         vali_data, vali_loader = self._get_data(flag='val')
         test_data, test_loader = self._get_data(flag='test')
@@ -102,6 +102,12 @@ class BaseLSTM():
         criterion = self._select_criterion()
 
         if self.args['use_amp']: scaler = torch.cuda.amp.GradScaler()
+
+        path = os.path.join(self.args['checkpoints'],setting)
+        best_model_path = path+'/'+'checkpoint.pth'
+
+        if load & os.path.exists(best_model_path):
+            self.model.load_state_dict(torch.load(best_model_path))
 
         for epoch in range(self.args['train_epochs']):
             iter_count = 0
@@ -139,7 +145,7 @@ class BaseLSTM():
             print("Epoch: {} cost time: {}".format(epoch+1, time.time()-epoch_time))
             train_loss = np.average(train_loss)
 
-            vali_loss = self.vali(vali_data,vali_loader,criterion)
+            vali_loss = self.vali(vali_data, vali_loader, criterion)
             test_loss = self.vali(test_data, test_loader, criterion)
 
             print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Test Loss: {4:.7f}".format(
@@ -152,13 +158,10 @@ class BaseLSTM():
                     break
 
             adjust_learning_rate(model_optim, epoch+1, self.args)
-        # best_model_path = os.path.join(path,'lstm-checkpoint.pth')
-        # if not os.path.exists(best_model_path): 
-        #     file=open(best_model_path,'w')
-        #     file.close()
+        best_model_path = os.path.join(path,'checkpoint.pth')
 
-        # test 模型保存有误
-        # self.model.load_state_dict(torch.load(best_model_path))
+        # 加载训练的最优值
+        self.model.load_state_dict(torch.load(best_model_path))
 
         return self.model
     
@@ -178,39 +181,44 @@ class BaseLSTM():
         self.model.train()
         return total_loss
 
-    def test(self, setting):
+    def test(self, setting, load=True):
         test_data, test_loader = self._get_data(flag='test')
+
+        if load:
+            path = os.path.join(self.args['checkpoints'],setting)
+            best_model_path = path+'/'+'checkpoint.pth'
+            self.model.load_state_dict(torch.load(best_model_path))
 
         self.model.eval() # 测试，取消dropout和batchnorm
         preds = []
         reals = []
         for i,(batch_x,batch_y) in enumerate(test_loader):
             pred,real = self._process_one_batch(
-                test_data,batch_x,batch_y
+                batch_x,batch_y
             )
-
+                      
             preds.append(pred.detach().cpu().numpy())
             reals.append(real.detach().cpu().numpy())
 
-            preds = np.array(preds)
-            reals = np.array(reals)
-            print('test shape:',preds.shape[-2], preds.shape[-1])
-            preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
-            reals = reals.reshape(-1, reals.shape[-2],reals.shape[-1])
-            print('test shape:', preds.shape, reals.shape)
+        preds = np.array(preds)
+        reals = np.array(reals)
+        print('test shape:',preds.shape[-2], preds.shape[-1])
+        preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])[-1]
+        reals = reals.reshape(-1, reals.shape[-2],reals.shape[-1])[-1]
+        print('test shape:', preds.shape, reals.shape)
 
-            # result save
-            folder_path = './result/' + setting + '/'
-            if not os.path.exists(folder_path):
-                os.makedirs(folder_path)
+        # result save
+        folder_path = os.path.join('./result',setting)
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
 
-            # 所有的误差
-            mae, mse, rmse, mape, mspe = metric(preds, reals)
-            print('mse:{}, mae:{}'.format(mse,mae))
+        # 所有的误差
+        mae, mse, rmse, mape, mspe, r2 = metric(preds, reals)
+        print(f'mse:{mse}, mae:{mae},rmse:{rmse},mape:{mape},mspe:{mspe},R2:{r2}')
 
-            np.save(folder_path+'metrics.npy',np.array([mae,mse,rmse,mape,mspe]))
-            np.save(folder_path+'pred.npy',preds)
-            np.save(folder_path+'real.npy',reals)
+        np.save(folder_path+'/metrics.npy',np.array([mae,mse,rmse,mape,mspe]))
+        np.save(folder_path+'/pred.npy',preds)
+        np.save(folder_path+'/real.npy',reals)
 
         return
 
@@ -222,12 +230,12 @@ class BaseLSTM():
             best_model_path = path+'/'+'checkpoint.pth'
             self.model.load_state_dict(torch.load(best_model_path))
 
-        self.model_eval()
+        self.model.eval()
 
         preds = []
         for i,(batch_x,batch_y) in enumerate(pred_loader):
             pred,real = self._process_one_batch(
-                pred_data,batch_x,batch_y
+                batch_x,batch_y
             )
             pred.append(pred.detach().cpu.numpy())
 

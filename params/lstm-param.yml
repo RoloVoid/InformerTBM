@@ -7,7 +7,7 @@ check_points: './checkpoints'
 
 # 选取特征
 cols: ''
-target: ''
+target: '磨损效率'
 
 batch_size: 32
 seq_len: 16
@@ -22,7 +22,7 @@ num_layers: 2 # 用一个两层的lstm作为基线
 
 # 数据采集
 num_workers: 5
-shuffle: False
+shuffle: True
 
 # 训练工具
 train_epochs: 400
@@ -31,6 +31,8 @@ patience: 50 # 用于早停的参数
 lradj: 'type3' # 学习率参数，可选固定学习率(type3)/自适应学习率(type2)/动态学习率(type1)
 learning_rate: 0.001 # 初始化优化器的学习率, 会受动态学习率工具制约
 loss: 'mse' # 损失函数
+
+checkpoints: './checkpoints'
 
 # 训练设备
 use_gpu: True

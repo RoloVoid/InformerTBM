@@ -11,11 +11,13 @@ type_map = {'train':1,'val':2,'test':0}
 
 # 此处的盾构机数据处理任务默认是一个MS(Mutivariate predict univariate，即多变量预测单变量)任务
 # informer的原设计中对上述的不同情况进行了区分，此处的简化不再区分
+
+# ToDo: 支持参数内自主支持特征，此处的target暂时用不了，是一个进行了数据集特化
 class TBMDataset(Dataset):
     def __init__(self,shuffle=False,
                  root_path='../data/shieldmachine/knife',flag='train',size=None,
                  split='刀号',data_path='temp1.xlsx',
-                 target='单位时间磨损量',scale=False,cols=None):
+                 target='磨损效率',scale=False,cols=None):
         
         # 依据informer架构的设计:
         # size[seq_len, label_len, pred_len]
@@ -86,16 +88,17 @@ class TBMDataset(Dataset):
         r_end = r_begin + self.label_len + self.pred_len
         seq_x = self.data_x[s_begin:s_end]
         seq_y = self.data_y[r_begin:r_end]
-
+        
         return seq_x, seq_y
         
     def __len__(self):
         return len(self.data_x)-self.seq_len - self.pred_len+1
-        
+
+# 此处同理
 class TBMDataset_Pred(Dataset):
-    def __init__(self,root_path,flag='pred',
-                 size=None, features='S', data_path='',
-                 target='',scale=True,cols=None):
+    def __init__(self,root_path='../data/shieldmachine/knife',flag='pred',
+                 size=None, data_path='temp1.xlsx',
+                 target='磨损效率',scale=True,cols=None):
         if size == None:
             self.seq_len = 8*4*4
             self.label_len = 8*4
@@ -108,45 +111,42 @@ class TBMDataset_Pred(Dataset):
         # init
         assert flag=='pred'
 
-        self.features = features
         self.target = target
         self.scale = scale
         self.cols = cols
         self.root_path = root_path
         self.data_path = data_path
-        self.__read_path__()
+        self.__read_data__()
 
     def __read_data__(self):
         self.scaler = StandardScaler() # 归一化工具
-        df_raw = pd.read_csv(os.path.join(self.root_path, self.data_path))
+        df_raw = pd.read_excel(os.path.join(self.root_path, self.data_path))
 
-        # 此处所在的数据集标注：
-        # df_raw ['features'...,target feature]
-
-        # 用于提取需要的特征
         if self.cols:
             cols = self.cols.copy()
             cols.remove(self.target)
         else:
             cols = list(df_raw.columns)
-            cols.remove(self.target)
+            cols = cols[1:-1]
+            # cols.remove(self.target)
 
-        df_raw = df_raw[cols+[self.target]]
+        
 
         border1 = len(df_raw)-self.seq_len
         border2 = len(df_raw)
 
         df_data = df_raw[[self.target]]
+        df_raw = df_raw[cols].values
 
         if self.scale:
             self.scaler.fit(df_data.values)
             data = self.scaler.transform(df_data.values)
         else: data=df_data.values
 
-        self.data_x = data[border1:border2]
+        self.data_x = df_raw[border1:border2]
         self.data_y = data[border1:border2]
 
-    def __get_item__(self,index):
+    def __getitem__(self,index):
         s_begin = index
         s_end = s_begin + self.seq_len
         r_begin = s_end = self.label_len

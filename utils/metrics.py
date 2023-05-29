@@ -1,4 +1,5 @@
 import numpy as np
+from sklearn.metrics import r2_score
 
 def RSE(pred, true):
     return np.sqrt(np.sum((true-pred)**2)) / np.sqrt(np.sum((true-true.mean())**2))
@@ -16,7 +17,7 @@ def MSE(pred, true):
 
 # 衡量回归模型的R2指标
 def R2(pred, true):
-    return 1-np.sum((true-pred)**2)/np.sum((true-true.mean())**2)
+    return r2_score(true,pred)
 
 def RMSE(pred, true):
     return np.sqrt(MSE(pred, true))
@@ -33,5 +34,6 @@ def metric(pred, true):
     rmse = RMSE(pred, true)
     mape = MAPE(pred, true)
     mspe = MSPE(pred, true)
+    r2 = R2(pred,true)
     
-    return mae,mse,rmse,mape,mspe
+    return mae,mse,rmse,mape,mspe,r2

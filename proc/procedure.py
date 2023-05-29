@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader
 import os
 import time
 
-class Procedure():
+class Informer_Procedure():
     def __init__(self,args):
         self.args = args
         self.device = self._training_device()
@@ -103,14 +103,14 @@ class Procedure():
         return criterion
     
     # 验证
-    def vali(self, vali_data, vali_loader,criterion):
+    def vali(self, vali_data, vali_loader, criterion):
         self.model.eval() # 预测时不启用dropout和batch_norm
         total_loss = []
 
         # 去掉了所有的time_mark
         for i,(batch_x,batch_y) in enumerate(vali_loader):
             pred, real = self._process_one_batch(
-                vali_data, batch_x, batch_y
+                batch_x, batch_y
             )
             # 预测要限制梯度的反向传播
             loss = criterion(pred.detach().cpu(),real.detach().cpu())
@@ -119,7 +119,7 @@ class Procedure():
         self.model.train()
         return total_loss
     
-    def train(self, setting):
+    def train(self, setting, load=False):
         train_data, train_loader = self._get_data(flag = 'train')
         vali_data, vali_loader = self._get_data(flag = 'val')
         test_data, test_loader = self._get_data(flag = 'test')
@@ -140,6 +140,13 @@ class Procedure():
 
         if self.args['use_amp']: scaler = torch.cuda.amp.GradScaler()
 
+        # 是否要加载当前最优模型参数
+        if load:
+            path = os.path.join(self.args['checkpoints'],setting)
+            best_model_path = path+'/checkpoint.pth'
+            if os.path.exists(best_model_path):
+                self.model.load_state_dict(torch.load(best_model_path))
+
         for epoch in range(self.args['train_epochs']):
             iter_count = 0
             train_loss = []
@@ -150,7 +157,7 @@ class Procedure():
                 iter_count += 1
                 model_optim.zero_grad()
                 pred,real = self._process_one_batch(
-                    train_data,batch_x,batch_y
+                   batch_x,batch_y
                 )
 
                 loss = criterion(pred,real)
@@ -192,47 +199,53 @@ class Procedure():
             adjust_learning_rate(model_optim, epoch+1, self.args)
         
         # 检查点是当前最优的模型
-        best_model_path = path+'/'+'checkpoint.pth'
+        best_model_path = os.path.join(path,'checkpoint.pth')
 
         self.model.load_state_dict(torch.load(best_model_path))
 
         return self.model
     
-    def test(self, setting):
+    def test(self, setting, load=True):
         test_data, test_loader = self._get_data(flag='test')
+
+        path = os.path.join(self.args['checkpoints'],setting)
+        best_model_path = path+'/'+'checkpoint.pth'
+
+        if load and os.path.exists(best_model_path):
+            self.model.load_state_dict(torch.load(best_model_path))
 
         self.model.eval() # 测试，取消dropout和batchnorm
         preds = []
         reals = []
         for i,(batch_x,batch_y) in enumerate(test_loader):
             pred,real = self._process_one_batch(
-                test_data,batch_x,batch_y
+                batch_x,batch_y
             )
 
             preds.append(pred.detach().cpu().numpy())
             reals.append(real.detach().cpu().numpy())
 
-            preds = np.array(preds)
-            reals = np.array(reals)
-            print('test shape:',preds.shape[-2], preds.shape[-1])
-            preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
-            reals = reals.reshape(-1, reals.shape[-2],reals.shape[-1])
-            print('test shape:', preds.shape, reals.shape)
+        preds = np.array(preds)
+        reals = np.array(reals)
+        print('test shape:',preds.shape[-2], preds.shape[-1])
+        preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])[-1]
+        reals = reals.reshape(-1, reals.shape[-2],reals.shape[-1])[-1]
+        print('test shape:', preds.shape, reals.shape)
 
-            # result save
-            folder_path = './result/' + setting + '/'
-            if not os.path.exists(folder_path):
-                os.makedirs(folder_path)
+        # result save
+        folder_path = os.path.join('./result',setting)
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
 
-            # 所有的误差
-            mae, mse, rmse, mape, mspe = metric(preds, reals)
-            print('mse:{}, mae:{}'.format(mse,mae))
+        # 所有的误差
+        mae, mse, rmse, mape, mspe, r2 = metric(preds, reals)
+        print(f'mse:{mae}, mae:{mse}, rmse:{rmse}, mape:{mape}, mspe:{mspe}, r2:{r2}')
 
-            np.save(folder_path+'metrics.npy',np.array([mae,mse,rmse,mape,mspe]))
-            np.save(folder_path+'pred.npy',preds)
-            np.save(folder_path+'real.npy',reals)
+        np.save(folder_path+'/metrics.npy',np.array([mae,mse,rmse,mape,mspe,r2]))
+        np.save(folder_path+'/pred.npy',preds)
+        np.save(folder_path+'/real.npy',reals)
 
-            return
+        return
         
     def predict(self, setting, load=False):
         pred_data, pred_loader = self._get_data(flag='pred')
@@ -263,7 +276,7 @@ class Procedure():
 
         return
         
-    def _process_one_batch(self,dataset_object, batch_x, batch_y):
+    def _process_one_batch(self, batch_x, batch_y):
         batch_x = batch_x.float().to(self.device)
         batch_y = batch_y.float()
         
@@ -279,7 +292,7 @@ class Procedure():
         else:
             outputs = self.model(batch_x, dec_input)
 
-        batch_y = batch_y[:,-self.args['pred_len']:,0:].to(self.device)
+        batch_y = batch_y[:,-self.args['pred_len']:,:].to(self.device)
 
         return outputs[:,:,-1], batch_y[:,:,-1]
 
