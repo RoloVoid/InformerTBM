@@ -7,22 +7,17 @@ from utils.visualization.base import VisualBase
 class TbVisualizer(VisualBase):
     def __init__(self,path):
         super(TbVisualizer,self).__init__(path)
+        self.writer = self._gen_Writer() # self.writer.close()
 
-    # 在这个任务里，数据来源是npy, 文件夹下包括pred.npy real.npy metric.npy三个文件
-    def get_data(self):
-        data = os.listdir(self.path)
-        if len(data)<1: 
-            print("this dir is empty")
-            return
-        cur = os.getcwd()
-        os.chdir(self.path)
-        pred = np.load('pred.npy')
-        real = np.load('real.npy')
-        metrics = np.load('metrics.npy')
-        print(metrics.shape)
-        print(real.shape)
-        print(pred.shape)
-        print(metrics)
+    def write_data(self,loss,epoch):
+        assert(self.writer is not None)
+        self.writer.add_scalar("Loss/epoch",loss,epoch)
+        self.writer.flush()
 
-    def gen_Writer(self):
+    def close(self):
+        self.writer.close()
+        
+    def _gen_Writer(self):
         writer = SummaryWriter(self.path)
+        return writer
+    

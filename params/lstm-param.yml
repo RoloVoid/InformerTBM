@@ -33,6 +33,7 @@ learning_rate: 0.001 # 初始化优化器的学习率, 会受动态学习率工�
 loss: 'mse' # 损失函数
 
 checkpoints: './checkpoints'
+predict_path: './runs/LSTM' # tensorboard测试/预测时的数据log所在文件夹
 
 # 训练设备
 use_gpu: True

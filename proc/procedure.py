@@ -3,6 +3,7 @@ from models.model import InformerTBM
 
 from utils.tools import EarlyStopping, adjust_learning_rate
 from utils.metrics import metric
+from utils.visualization.tboard import TbVisualizer
 
 import torch
 import numpy as np
@@ -147,12 +148,15 @@ class Informer_Procedure():
             if os.path.exists(best_model_path):
                 self.model.load_state_dict(torch.load(best_model_path))
 
+        # 在tensorboard中画图
+        tb = TbVisualizer(self.args['log_path'])
         for epoch in range(self.args['train_epochs']):
             iter_count = 0
             train_loss = []
 
             self.model.train()
             epoch_time = time.time()
+            
             for i, (batch_x,batch_y) in enumerate(train_loader):
                 iter_count += 1
                 model_optim.zero_grad()
@@ -183,6 +187,8 @@ class Informer_Procedure():
             print("Epoch: {} cost time: {}".format(epoch+1, time.time()-epoch_time))
             train_loss = np.average(train_loss)
 
+            tb.write_data(epoch=epoch,loss=train_loss)
+
             vali_loss = self.vali(vali_data,vali_loader,criterion)
             test_loss = self.vali(test_data, test_loader, criterion)
 
@@ -200,6 +206,7 @@ class Informer_Procedure():
         
         # 检查点是当前最优的模型
         best_model_path = os.path.join(path,'checkpoint.pth')
+        tb.close()
 
         self.model.load_state_dict(torch.load(best_model_path))
 
@@ -217,13 +224,19 @@ class Informer_Procedure():
         self.model.eval() # 测试，取消dropout和batchnorm
         preds = []
         reals = []
+        tbr = TbVisualizer(os.path.join(self.args['predict_path'],'real'))
+        tbp = TbVisualizer(os.path.join(self.args['predict_path'],'pred'))
         for i,(batch_x,batch_y) in enumerate(test_loader):
             pred,real = self._process_one_batch(
                 batch_x,batch_y
             )
-
+            tbp.write_data(pred.mean(),i)
+            tbr.write_data(real.mean(),i)
             preds.append(pred.detach().cpu().numpy())
             reals.append(real.detach().cpu().numpy())
+        
+        tbr.close()
+        tbp.close()
 
         preds = np.array(preds)
         reals = np.array(reals)

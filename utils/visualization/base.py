@@ -4,8 +4,8 @@ import os
 
 class VisualBase:
     def __init__(self,path:str):
-        assert(os.path.exists(path))
+        # if not os.path.exists(path): os.makedirs(path,exist_ok=True)
         self.path = path
 
-    def get_data(self):
+    def write_data(self):
         pass

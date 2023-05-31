@@ -10,6 +10,7 @@ from baseline.lstm import LSTM
 from data.data_loader import TBMDataset,TBMDataset_Pred,DataLoader
 from utils.tools import EarlyStopping, adjust_learning_rate
 from utils.metrics import metric
+from utils.visualization.tboard import TbVisualizer
 
 class BaseLSTM():
     def __init__(self,args):
@@ -192,13 +193,21 @@ class BaseLSTM():
         self.model.eval() # 测试，取消dropout和batchnorm
         preds = []
         reals = []
+        tbr = TbVisualizer(os.path.join(self.args['predict_path'],'real'))
+        tbp = TbVisualizer(os.path.join(self.args['predict_path'],'pred'))
         for i,(batch_x,batch_y) in enumerate(test_loader):
             pred,real = self._process_one_batch(
                 batch_x,batch_y
             )
+
+            tbr.write_data(real.mean(),i)
+            tbp.write_data(pred.mean(),i)
                       
             preds.append(pred.detach().cpu().numpy())
             reals.append(real.detach().cpu().numpy())
+
+        tbr.close()
+        tbp.close()
 
         preds = np.array(preds)
         reals = np.array(reals)
